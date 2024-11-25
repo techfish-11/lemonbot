@@ -15,9 +15,9 @@ export default defineConfig({
       {
         text: 'Docs',
         items: [
-          { text: 'LemonBotとは', link: '/docs/index.md' },
-          { text: 'コマンド使用方法', link: '/docs/command-use.md' },
-          { text: 'botサポート', link: '/docs/support.md' }
+          { text: 'LemonBotとは', link: '/lemon/index.md' },
+          { text: 'コマンド使用方法', link: '/lemon/command-use.md' },
+          { text: 'botサポート', link: '/lemon/support.md' }
         ]
       }
     ],

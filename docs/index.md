@@ -10,7 +10,7 @@ hero:
   actions:
     - theme: brand
       text: 使い方
-      link: /docs/index.md
+      link: /lemon/index.md
     - theme: alt
       text: 導入する
       link: https://discord.com/oauth2/authorize?client_id=1310198598213963858
