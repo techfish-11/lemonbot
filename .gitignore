@@ -19,3 +19,7 @@ announce.yml
 trash/
 
 memo.txt
+
+# docs
+docs/node_modules/
+docs/.vitepress/cache
