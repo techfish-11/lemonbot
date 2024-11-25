@@ -5,6 +5,7 @@
 lemon.db
 AFK.db
 lemoncoin.db
+joinmessage.db
 
 # Pythonのコンパイル済みバイトコード（__pycache__）
 cogs/__pycache__/
