@@ -17,11 +17,13 @@ class AA(commands.Cog):
             # メッセージIDを使用してメッセージを取得
             message = await interaction.channel.fetch_message(message_id)
             image_url = None
+
             # メッセージに添付された画像を探す
-            for attachment in message.attachments:
-                if attachment.url.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp')):
-                    image_url = attachment.url
-                    break
+            if message.attachments:
+                for attachment in message.attachments:
+                    if attachment.url.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp')):
+                        image_url = attachment.url
+                        break
             
             if not image_url:
                 await interaction.response.send_message("画像が添付されていないメッセージです。")
