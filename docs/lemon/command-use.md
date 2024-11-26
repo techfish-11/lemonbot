@@ -116,6 +116,18 @@
 
 ---
 
+### `/package package_name: manager:`
+- **説明**: npm or pipのパッケージを検索します。
+- **使用例**: `/package package_name:Discord manager:pip`
+
+---
+
+### `/wikipedia query:`
+- **説明**: wikipediaで検索します。
+- **使用例**: `/wikipedia query:Discord`
+
+---
+
 ## ネタ系コマンド
 
 #### `/lemon`
