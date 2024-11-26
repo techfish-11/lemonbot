@@ -22,19 +22,14 @@ jobs:
           git clean -fd
           git pull origin main
 
-      - name: Build Docs
+      - name: Build and Deploy Docs
         run: |
           cd docs
           npm ci
           npm run docs:build
-
-      - name: Deploy Docs
-        env:
-          LEMONBOT_PATH: ${{ secrets.LEMONBOT_PATH }}
-        run: |
           sudo rm -rf /var/www/html/*
           sudo cp -r $LEMONBOT_PATH/docs/.vitepress/dist/* /var/www/html/
-
+          
       - name: Restart Nginx Service
         run: |
           sudo systemctl reload nginx.service
