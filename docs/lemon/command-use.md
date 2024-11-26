@@ -137,6 +137,12 @@
 
 ---
 
+#### `/moji-bake content:`
+- **説明**: 文字をわざと文字化けさせます。
+- **使用例**: `/moji-bake content:`
+
+---
+
 ## Bot管理者専用
 
 #### `/coin-admin action: target_user: amount:`
