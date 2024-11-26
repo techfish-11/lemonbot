@@ -24,6 +24,7 @@ jobs:
 
       - name: Build Docs
         run: |
+          cd docs
           npm ci
           npm run docs:build
 
