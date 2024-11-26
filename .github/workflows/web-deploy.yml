@@ -24,7 +24,6 @@ jobs:
 
       - name: Build Docs
         run: |
-          cd docs
           npm ci
           npm run docs:build
 
@@ -32,9 +31,13 @@ jobs:
         env:
           LEMONBOT_PATH: ${{ secrets.LEMONBOT_PATH }}
         run: |
+          cd docs
+          npm install
+          npm run docs:build
+          ls .vitepress/dist/
           sudo rm -rf /var/www/html/*
-          sudo cp -r $LEMONBOT_PATH/docs/.vitepress/dist/. /var/www/html/
-
+          sudo cp -r .vitepress/dist/* /var/www/html/
+          
       - name: Restart Nginx Service
         run: |
           sudo systemctl reload nginx.service
