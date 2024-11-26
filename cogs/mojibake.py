@@ -12,6 +12,10 @@ class MojiBake(commands.Cog):
         try:
             # UTF-8にエンコード → ISO-8859-1でデコード（わざと文字化けさせる）
             content_baked = content.encode('utf-8').decode('iso-8859-1')
+
+            # 英語も文字化けさせるために、もう一段階Shift_JISに変換するなど、さらに文字化けを加える
+            content_baked = content_baked.encode('utf-8').decode('shift_jis', errors='ignore')  # Shift_JISでもデコード
+
         except Exception as e:
             content_baked = f"エラーが発生しました: {str(e)}"
         
