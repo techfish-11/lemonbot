@@ -23,6 +23,8 @@ jobs:
           git pull origin main
 
       - name: Build and Deploy Docs
+        env:
+          LEMONBOT_PATH: ${{ secrets.LEMONBOT_PATH }}
         run: |
           cd docs
           npm ci
