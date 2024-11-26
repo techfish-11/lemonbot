@@ -1,55 +1,48 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
+import aiohttp
+import time
 import asyncio
 
-# Botの初期化
-intents = discord.Intents.default()
-bot = commands.Bot(command_prefix='!', intents=intents)
+class Status(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
 
-async def get_router_latency(router_ip):
-    """
-    ルーターレイテンシを取得するためにpingコマンドを実行します。
-    :param router_ip: ルーターのIPアドレス
-    :return: レイテンシの値（ms）またはエラー
-    """
-    try:
-        # pingコマンドを非同期で実行
-        process = await asyncio.create_subprocess_exec(
-            'ping', '-c', '1', router_ip,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+    @app_commands.command(name="status", description="ボットのステータスを確認します")
+    async def status(self, interaction: discord.Interaction):
+        # Discord APIレイテンシを取得
+        discord_latency = round(self.bot.latency * 1000, 2)  # 秒 → ミリ秒
+
+        # ネットワークルーターレイテンシを計測
+        router_latency = await self.ping_router("192.168.1.1")
+
+        # レスポンスを埋め込みで作成
+        embed = discord.Embed(
+            title="LemonBot ステータス",
+            color=discord.Color.blue()
         )
-        stdout, stderr = await process.communicate()
+        embed.add_field(name="Discord APIレイテンシ", value=f"{discord_latency}ms", inline=False)
+        embed.add_field(name="ネットワークルーターレイテンシ", value=f"{router_latency}ms", inline=False)
+        embed.add_field(name="ステータス詳細", value="[こちらをご覧ください](https://status.sakana11.org)", inline=False)
+        embed.set_footer(text="Deploy RunnerでLemonBotは動作しています。")
 
-        if process.returncode == 0:
-            # pingの出力を解析
-            output = stdout.decode()
-            for line in output.splitlines():
-                if "time=" in line:
-                    latency = line.split("time=")[1].split(" ")[0]
-                    return f"{latency} ms"
-        return "計測不可"
-    except Exception as e:
-        return f"エラー: {e}"
+        await interaction.response.send_message(embed=embed)
 
-@bot.slash_command(name="status", description="Botのステータスを表示します。")
-async def status(ctx):
-    # Discord APIのレイテンシ
-    discord_latency = round(bot.latency * 1000)  # 秒 -> ミリ秒に変換
-    # ネットワークルーターレイテンシ
-    router_ip = "192.168.1.1"  # 適切なIPアドレスを設定してください
-    router_latency = await get_router_latency(router_ip)
+    async def ping_router(self, router_ip):
+        """ルーターレイテンシを計測"""
+        try:
+            start_time = time.time()
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"http://{router_ip}", timeout=3):
+                    pass  # レスポンスデータは不要
+            latency = round((time.time() - start_time) * 1000, 2)  # 秒 → ミリ秒
+            return latency
+        except aiohttp.ClientError:
+            return "接続エラー"
+        except asyncio.TimeoutError:
+            return "タイムアウト"
 
-    # ステータスメッセージの作成
-    status_message = (
-        f"**Discord APIレイテンシ**: `{discord_latency} ms`\n"
-        f"**ネットワークルーターレイテンシ**: `{router_latency}`\n"
-        f"ステータス詳細は、[こちら](https://status.sakana11.org)をご覧ください。\n"
-        "Deploy RunnerでLemonBotは動作しています。"
-    )
-
-    # メッセージを送信
-    await ctx.respond(status_message)
-
-# Botの起動
-bot.run('YOUR_BOT_TOKEN')  # あなたのBotトークンを入力
+async def setup(bot: commands.Bot):
+    """Cogを非同期で追加"""
+    await bot.add_cog(Status(bot))
