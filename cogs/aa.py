@@ -10,9 +10,11 @@ class AA(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="image-to-aa", description="画像をASCIIアートに変換します")
-    async def image_to_aa(self, interaction: discord.Interaction, message_id: int):
-        # メッセージIDを使用してメッセージを取得
+    async def image_to_aa(self, interaction: discord.Interaction, message_id: str):
+        # メッセージIDを整数に変換
         try:
+            message_id = int(message_id)  # メッセージIDを整数に変換
+            # メッセージIDを使用してメッセージを取得
             message = await interaction.channel.fetch_message(message_id)
             image_url = None
             # メッセージに添付された画像を探す
@@ -60,6 +62,8 @@ class AA(commands.Cog):
             await interaction.response.send_message("指定したメッセージが見つかりませんでした。")
         except discord.Forbidden:
             await interaction.response.send_message("メッセージにアクセスする権限がありません。")
+        except ValueError:
+            await interaction.response.send_message("無効なメッセージIDが指定されました。数値のIDを指定してください。")
         except Exception as e:
             await interaction.response.send_message(f"エラーが発生しました: {str(e)}")
 
