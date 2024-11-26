@@ -59,7 +59,7 @@
 
 ## 便利系コマンド
 
-#### `/base64 action:<encode/decode> content:<内容>`
+#### `/help-command`
 - **説明**: すべてのコマンド一覧を表示します。
 - **使用例**: `/help-command`
 ---
