@@ -3,38 +3,28 @@ from discord.ext import commands
 from discord import app_commands
 import os
 from PIL import Image
+import aiohttp
 from io import BytesIO
 
 class AA(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="image-to-aa", description="画像をASCIIアートに変換します")
-    async def image_to_aa(self, interaction: discord.Interaction, message_id: str):
-        # メッセージIDを整数に変換
+    @app_commands.command(name="image-to-aa", description="画像をASCIIアートに変換します。")
+    @app_commands.describe(image="画像を添付してください")
+    async def image_to_aa(self, interaction: discord.Interaction, image: discord.Attachment):
+        # 画像URLを取得
+        image_url = image.url
+
         try:
-            message_id = int(message_id)  # メッセージIDを整数に変換
-            # メッセージIDを使用してメッセージを取得
-            message = await interaction.channel.fetch_message(message_id)
-            image_url = None
-
-            # メッセージに添付された画像を探す
-            if message.attachments:
-                for attachment in message.attachments:
-                    if attachment.url.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp')):
-                        image_url = attachment.url
-                        break
-            
-            if not image_url:
-                await interaction.response.send_message("画像が添付されていないメッセージです。")
-                return
-
             # 画像をダウンロード
             image_path = "temp_image.jpg"
-            async with self.bot.http.get(image_url) as response:
-                if response.status == 200:
-                    with open(image_path, 'wb') as f:
-                        f.write(await response.read())
+            async with aiohttp.ClientSession() as session:
+                async with session.get(image_url) as response:
+                    if response.status == 200:
+                        image_data = await response.read()
+                        with open(image_path, 'wb') as f:
+                            f.write(image_data)
 
             try:
                 # 画像をASCIIアートに変換
@@ -60,12 +50,6 @@ class AA(commands.Cog):
             if os.path.exists(txt_file_path):
                 os.remove(txt_file_path)
 
-        except discord.NotFound:
-            await interaction.response.send_message("指定したメッセージが見つかりませんでした。")
-        except discord.Forbidden:
-            await interaction.response.send_message("メッセージにアクセスする権限がありません。")
-        except ValueError:
-            await interaction.response.send_message("無効なメッセージIDが指定されました。数値のIDを指定してください。")
         except Exception as e:
             await interaction.response.send_message(f"エラーが発生しました: {str(e)}")
 
