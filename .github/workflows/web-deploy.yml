@@ -27,7 +27,7 @@ jobs:
           LEMONBOT_PATH: ${{ secrets.LEMONBOT_PATH }}
         run: |
           cd docs
-          npm ci
+          npm install
           npm run docs:build
           sudo rm -rf /var/www/html/*
           sudo cp -r $LEMONBOT_PATH/docs/.vitepress/dist/* /var/www/html/
