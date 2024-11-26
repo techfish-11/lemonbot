@@ -33,8 +33,12 @@ async def on_error(event, *args, **kwargs):
         if admin_user:
             error_details = traceback.format_exc()
             await admin_user.send(f"エラーが発生しました。\n\n```\n{error_details}\n```")
+        
+        # エラー詳細をコンソールに出力
+        print(f"エラー発生: {traceback.format_exc()}")
 
     except Exception as inner_error:
+        # エラーハンドリング中にエラーが発生した場合もその詳細を出力
         print(f"エラーハンドリング中にエラーが発生しました: {inner_error}")
 
 @bot.event
@@ -47,6 +51,9 @@ async def on_command_error(ctx, error):
     if admin_user:
         error_details = traceback.format_exc()
         await admin_user.send(f"コマンドエラーが発生しました。\n\n```\n{error_details}\n```")
+
+    # エラー詳細をコンソールに出力
+    print(f"コマンドエラー発生: {traceback.format_exc()}")
 
 @bot.event
 async def on_ready():
