@@ -22,13 +22,18 @@ class JoinMessage(commands.Cog):
         conn.commit()
         conn.close()
 
+    def sanitize_message(self, message: str) -> str:
+        """メンションを防ぐため、@やeveryone、roleを無効化"""
+        sanitized_message = re.sub(r'@', '＠', message)
+        sanitized_message = re.sub(r'@(everyone|here)', '＠\\1', sanitized_message)
+        return sanitized_message
+
     @discord.app_commands.command(
         name="join-message", 
-        description="参加メッセージを有効化または無効化します。\n\n"
+        description="参加メッセージを有効化または無効化します。"
     )
     async def join_message(self, interaction: discord.Interaction, action: bool, message: str = None):
         """参加メッセージの設定を有効化または無効化"""
-        # ユーザーがモデレーター権限を持っているかチェック
         if not interaction.user.guild_permissions.manage_messages:
             await interaction.response.send_message("このコマンドを実行するには、メッセージ管理権限が必要です。")
             return
@@ -37,22 +42,21 @@ class JoinMessage(commands.Cog):
         conn = sqlite3.connect('joinmessage.db')
         c = conn.cursor()
 
-        # プレースホルダ以外の関数が使われていないかチェック
-        if not self.is_valid_message(message):
-            await interaction.response.send_message("無効なプレースホルダが含まれています。")
-            return
+        if message:
+            sanitized_message = self.sanitize_message(message)
+            if not self.is_valid_message(sanitized_message):
+                await interaction.response.send_message("無効なプレースホルダまたは危険なメッセージが含まれています。")
+                return
 
         if action:
-            # メッセージを設定して有効化
             c.execute('''
             INSERT INTO join_messages (server_id, message, enabled) 
             VALUES (?, ?, ?) 
             ON CONFLICT(server_id) 
-            DO UPDATE SET message = ?, enabled = ?''', (server_id, message, True, message, True))
+            DO UPDATE SET message = ?, enabled = ?''', (server_id, sanitized_message, True, sanitized_message, True))
             conn.commit()
-            await interaction.response.send_message(f"参加メッセージが有効化され、メッセージは「{message}」に設定されました。")
+            await interaction.response.send_message(f"参加メッセージが有効化されました。設定されたメッセージ: {sanitized_message}")
         else:
-            # 無効化
             c.execute('''
             INSERT INTO join_messages (server_id, message, enabled) 
             VALUES (?, ?, ?) 
@@ -64,32 +68,29 @@ class JoinMessage(commands.Cog):
         conn.close()
 
     def is_valid_message(self, message: str) -> bool:
-        """プレースホルダ以外の関数が含まれていないかチェック"""
-        # {member.name} や {member.id} のようなプレースホルダのみを許可
+        """プレースホルダ以外の無効な文字列を防ぐ"""
         allowed_patterns = [r"{member\.(name|id)}"]
         pattern = "|".join(allowed_patterns)
-        return bool(re.fullmatch(f"({pattern})*", message))
+        message_pattern = re.compile(f"({pattern})*")
+        return message_pattern.fullmatch(message) is not None
 
     def format_message(self, message: str, member: discord.Member) -> str:
-        """メッセージ内のプレースホルダを解釈してフォーマットする"""
-        # {member.name} や {member.id} を埋め込む
+        """プレースホルダの置換"""
         message = message.replace("{member.name}", member.name)
         message = message.replace("{member.id}", str(member.id))
         return message
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        """新規メンバーが参加したときに参加メッセージを送信"""
+        """新規メンバーが参加した際のメッセージ"""
         server_id = member.guild.id
         conn = sqlite3.connect('joinmessage.db')
         c = conn.cursor()
 
-        # サーバーの設定を確認
         c.execute('SELECT message, enabled FROM join_messages WHERE server_id = ?', (server_id,))
         result = c.fetchone()
 
-        if result and result[1]:  # メッセージが設定されており、有効化されている場合
-            # プレースホルダを解釈して、参加メッセージを送信
+        if result and result[1]:
             formatted_message = self.format_message(result[0], member)
             await member.guild.system_channel.send(formatted_message)
 

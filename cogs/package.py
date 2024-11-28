@@ -2,17 +2,25 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import requests
-import json
+import re
 
 class PackageSearch(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="package", description="npm or pipパッケージを検索します")
-    @app_commands.describe(package_name="検索したいパッケージ名", manager="検索するパッケージマネージャーを選択")
+    def sanitize_input(self, content: str) -> str:
+        """入力からメンションや危険な文字を無効化する"""
+        sanitized = re.sub(r'@', '＠', content)
+        return sanitized
+
+    @app_commands.command(name="package", description="npmまたはpipのパッケージを検索します")
+    @app_commands.describe(package_name="検索したいパッケージ名", manager="npmまたはpipを指定")
     async def package(self, interaction: discord.Interaction, package_name: str, manager: str):
+        # 入力をサニタイズ
+        package_name = self.sanitize_input(package_name)
+
         if manager not in ["npm", "pip"]:
-            await interaction.response.send_message("`npm`か`pip`のいずれかを指定してください。")
+            await interaction.response.send_message("パッケージマネージャーは`npm`または`pip`を指定してください。")
             return
 
         try:
@@ -24,42 +32,49 @@ class PackageSearch(commands.Cog):
             if result:
                 await interaction.response.send_message(f"検索結果:\n{result}")
             else:
-                await interaction.response.send_message(f"{manager}パッケージ `{package_name}` に関連する情報が見つかりませんでした。")
-
+                await interaction.response.send_message(f"{manager}パッケージ `{package_name}` の情報は見つかりませんでした。")
         except Exception as e:
             await interaction.response.send_message(f"エラーが発生しました: {str(e)}")
 
-    def search_npm_package(self, package_name):
+    def search_npm_package(self, package_name: str) -> str:
         """npmパッケージを検索 (npm registry APIを使用)"""
         try:
-            # npm registry APIを使用してパッケージを検索
             url = f"https://registry.npmjs.org/{package_name}"
             response = requests.get(url)
-            if response.status_code == 200:
-                package_info = response.json()
-                latest_version = package_info.get("dist-tags", {}).get("latest", "不明")
-                description = package_info.get("description", "説明なし")
-                homepage = package_info.get("homepage", "情報なし")
-                return f"**{package_name}**\nバージョン: {latest_version}\n説明: {description}\nURL: {homepage}"
-            else:
-                return None
-        except Exception as e:
-            return f"npmパッケージの検索中にエラーが発生しました: {str(e)}"
+            response.raise_for_status()  # HTTPエラーの自動検出
 
-    def search_pip_package(self, package_name):
+            package_info = response.json()
+            latest_version = package_info.get("dist-tags", {}).get("latest", "不明")
+            description = package_info.get("description", "説明なし")
+            homepage = package_info.get("homepage", "情報なし")
+            
+            return (f"**{package_name}**\n"
+                    f"バージョン: {latest_version}\n"
+                    f"説明: {description}\n"
+                    f"URL: {homepage}")
+        except requests.HTTPError as e:
+            return f"npmパッケージの取得中にHTTPエラーが発生しました: {e}"
+        except Exception as e:
+            return f"npmパッケージの検索中にエラーが発生しました"
+
+    def search_pip_package(self, package_name: str) -> str:
         """pipパッケージを検索 (PyPI APIを使用)"""
         try:
-            # PyPI APIを使用してパッケージを検索
             url = f"https://pypi.org/pypi/{package_name}/json"
             response = requests.get(url)
-            if response.status_code == 200:
-                package_info = response.json()
-                version = package_info.get("info", {}).get("version", "不明")
-                summary = package_info.get("info", {}).get("summary", "説明なし")
-                home_page = package_info.get("info", {}).get("home_page", "情報なし")
-                return f"**{package_name}**\nバージョン: {version}\n説明: {summary}\nURL: {home_page}"
-            else:
-                return None
+            response.raise_for_status()  # HTTPエラーの自動検出
+
+            package_info = response.json()
+            version = package_info.get("info", {}).get("version", "不明")
+            summary = package_info.get("info", {}).get("summary", "説明なし")
+            home_page = package_info.get("info", {}).get("home_page", "情報なし")
+
+            return (f"**{package_name}**\n"
+                    f"バージョン: {version}\n"
+                    f"説明: {summary}\n"
+                    f"URL: {home_page}")
+        except requests.HTTPError as e:
+            return f"pipパッケージの取得中にHTTPエラーが発生しました: {e}"
         except Exception as e:
             return f"pipパッケージの検索中にエラーが発生しました: {str(e)}"
 
