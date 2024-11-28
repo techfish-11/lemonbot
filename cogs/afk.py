@@ -8,12 +8,8 @@ class AFK(commands.Cog):
         self.bot = bot
 
     def sanitize_message(self, message: str) -> str:
-        """
-        メンションを無効化するため、@を全角＠に変換するか、他の方法でメンションを防ぐ。
-        """
-        # メンション無効化: @ → 全角＠に変換
-        sanitized_message = re.sub(r'@', '＠', message)
-        return sanitized_message
+        """メンションを無効化するため、@を全角＠に変換するか、他の方法でメンションを防ぐ。"""
+        return re.sub(r'@', '＠', message)  # メンション無効化
 
     @discord.app_commands.command(name="afk-start", description="AFK状態にする。通知したいことを設定できます。")
     async def afk_start(self, interaction: discord.Interaction, message: str):
@@ -27,7 +23,6 @@ class AFK(commands.Cog):
                             user_id INTEGER PRIMARY KEY,
                             message TEXT)''')
         
-        # ユーザーがAFK状態にある場合は上書き
         sanitized_message = self.sanitize_message(message)
         cursor.execute('INSERT OR REPLACE INTO afk_users (user_id, message) VALUES (?, ?)', 
                        (user_id, sanitized_message))
@@ -35,7 +30,8 @@ class AFK(commands.Cog):
         conn.close()
 
         await interaction.response.send_message(
-            f"{interaction.user.name}さんはAFK状態になりました。メッセージ: {sanitized_message}"
+            f"{interaction.user.name}さんはAFK状態になりました。メッセージ: {sanitized_message}",
+            allowed_mentions=discord.AllowedMentions.none()  # メンション無効化
         )
 
     @discord.app_commands.command(name="afk-end", description="AFK状態を解除します。")
@@ -45,12 +41,14 @@ class AFK(commands.Cog):
         conn = sqlite3.connect("AFK.db")
         cursor = conn.cursor()
 
-        # AFK状態を削除
         cursor.execute('DELETE FROM afk_users WHERE user_id = ?', (user_id,))
         conn.commit()
         conn.close()
 
-        await interaction.response.send_message(f"{interaction.user.name}さんのAFK状態が解除されました。")
+        await interaction.response.send_message(
+            f"{interaction.user.name}さんのAFK状態が解除されました。",
+            allowed_mentions=discord.AllowedMentions.none()  # メンション無効化
+        )
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -58,10 +56,7 @@ class AFK(commands.Cog):
         if message.author.bot:
             return  # botには反応しない
 
-        # メンションされているユーザーのIDを取得
         mentioned_users = message.mentions
-
-        # AFK状態のユーザーに反応
         conn = sqlite3.connect("AFK.db")
         cursor = conn.cursor()
 
@@ -71,9 +66,11 @@ class AFK(commands.Cog):
 
             if result:
                 afk_message = result[0]
+                sanitized_message = self.sanitize_message(afk_message)
                 await message.channel.send(
                     f"**{user.name}さんは現在AFK中です。**\n"
-                    f"ユーザーからのお手紙：\n{afk_message}"
+                    f"ユーザーからのお手紙：\n{sanitized_message}",
+                    allowed_mentions=discord.AllowedMentions.none()  # メンション無効化
                 )
 
         conn.close()

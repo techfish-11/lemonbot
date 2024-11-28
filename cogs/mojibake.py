@@ -31,8 +31,8 @@ class MojiBake(commands.Cog):
         except Exception as e:
             content_baked = f"予期しないエラーが発生しました: {str(e)}"
 
-        # 文字化けさせた内容を返す
-        await interaction.response.send_message(content_baked)
+        # メンション無効化設定を追加して返す
+        await interaction.response.send_message(content_baked, allowed_mentions=discord.AllowedMentions.none())
 
 async def setup(bot: commands.Bot):
     """Cogを非同期で追加"""

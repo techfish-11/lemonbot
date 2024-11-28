@@ -55,7 +55,10 @@ class JoinMessage(commands.Cog):
             ON CONFLICT(server_id) 
             DO UPDATE SET message = ?, enabled = ?''', (server_id, sanitized_message, True, sanitized_message, True))
             conn.commit()
-            await interaction.response.send_message(f"参加メッセージが有効化されました。設定されたメッセージ: {sanitized_message}")
+            await interaction.response.send_message(
+                f"参加メッセージが有効化されました。設定されたメッセージ: {sanitized_message}",
+                allowed_mentions=discord.AllowedMentions.none()  # メンション無効化
+            )
         else:
             c.execute('''
             INSERT INTO join_messages (server_id, message, enabled) 
@@ -63,7 +66,10 @@ class JoinMessage(commands.Cog):
             ON CONFLICT(server_id) 
             DO UPDATE SET enabled = ?''', (server_id, '', False, False))
             conn.commit()
-            await interaction.response.send_message("参加メッセージが無効化されました。")
+            await interaction.response.send_message(
+                "参加メッセージが無効化されました。",
+                allowed_mentions=discord.AllowedMentions.none()  # メンション無効化
+            )
 
         conn.close()
 
@@ -92,7 +98,10 @@ class JoinMessage(commands.Cog):
 
         if result and result[1]:
             formatted_message = self.format_message(result[0], member)
-            await member.guild.system_channel.send(formatted_message)
+            await member.guild.system_channel.send(
+                formatted_message,
+                allowed_mentions=discord.AllowedMentions.none()  # メンション無効化
+            )
 
         conn.close()
 

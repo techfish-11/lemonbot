@@ -10,7 +10,7 @@ class PackageSearch(commands.Cog):
 
     def sanitize_input(self, content: str) -> str:
         """入力からメンションや危険な文字を無効化する"""
-        sanitized = re.sub(r'@', '＠', content)
+        sanitized = re.sub(r'@', '＠', content)  # すべての@を全角に置き換え
         return sanitized
 
     @app_commands.command(name="package", description="npmまたはpipのパッケージを検索します")
@@ -55,7 +55,7 @@ class PackageSearch(commands.Cog):
         except requests.HTTPError as e:
             return f"npmパッケージの取得中にHTTPエラーが発生しました: {e}"
         except Exception as e:
-            return f"npmパッケージの検索中にエラーが発生しました"
+            return f"npmパッケージの検索中にエラーが発生しました: {str(e)}"
 
     def search_pip_package(self, package_name: str) -> str:
         """pipパッケージを検索 (PyPI APIを使用)"""
