@@ -13,6 +13,18 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)  # `commands.Bot`を使用
 
+# メンションしちゃったら削除する
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        # 自分が送信したメッセージかつメンションが含まれている場合
+        if message.mentions or message.role_mentions or message.mention_everyone:
+            await message.delete()
+            print("メンションを含むメッセージを削除しました。")
+        return
+    # 他のコマンドが使えるようにする
+    await bot.process_commands(message)
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
