@@ -1,7 +1,6 @@
 # LemonBot
 
 新国産多機能BotのLemonBotです。  
-開発主は時間がないのでChatGPTに頼っています。(ごめん)
 
 ---
 
